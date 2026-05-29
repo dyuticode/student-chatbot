@@ -1,18 +1,22 @@
+from dotenv import load_dotenv
+import os
 import streamlit as st
 from google import genai
 import speech_recognition as sr
 import json
-import os
+import time
+import pyttsx3
 from datetime import datetime
+from PyPDF2 import PdfReader
 
-# ---------------- PAGE SETTINGS ----------------
+load_dotenv()
+
 st.set_page_config(
     page_title="AI Student Assistant",
     page_icon="🤖",
     layout="wide"
 )
 
-# ---------------- CUSTOM DARK UI ----------------
 st.markdown("""
 <style>
 
@@ -43,32 +47,69 @@ h1, h2, h3, p {
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- FOLDER SETUP ----------------
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+USERNAME = os.getenv("USERNAME")
+PASSWORD = os.getenv("PASSWORD")
+
+if not st.session_state.logged_in:
+
+    st.title("🔐 Login to AI Assistant")
+
+    username = st.text_input("Username")
+
+    password = st.text_input(
+        "Password",
+        type="password"
+    )
+
+    if st.button("Login"):
+
+        if username == USERNAME and password == PASSWORD:
+
+            st.session_state.logged_in = True
+
+            st.rerun()
+
+        else:
+            st.error("Invalid username or password")
+
+    st.stop()
+
 CHAT_FOLDER = "saved_chats"
 
 if not os.path.exists(CHAT_FOLDER):
     os.makedirs(CHAT_FOLDER)
 
-# ---------------- FUNCTIONS ----------------
+UPLOAD_FOLDER = "uploads"
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 def save_chat(chat_name, messages):
 
-    filepath = os.path.join(CHAT_FOLDER, f"{chat_name}.json")
+    filepath = os.path.join(
+        CHAT_FOLDER,
+        f"{chat_name}.json"
+    )
 
     with open(filepath, "w") as f:
         json.dump(messages, f)
 
-
 def load_chat(chat_name):
 
-    filepath = os.path.join(CHAT_FOLDER, f"{chat_name}.json")
+    filepath = os.path.join(
+        CHAT_FOLDER,
+        f"{chat_name}.json"
+    )
 
     if os.path.exists(filepath):
+
         with open(filepath, "r") as f:
             return json.load(f)
 
     return []
-
 
 def get_chat_list():
 
@@ -77,12 +118,14 @@ def get_chat_list():
     for file in os.listdir(CHAT_FOLDER):
 
         if file.endswith(".json"):
-            chats.append(file.replace(".json", ""))
+
+            chats.append(
+                file.replace(".json", "")
+            )
 
     chats.sort(reverse=True)
 
     return chats
-
 
 def recognize_speech():
 
@@ -95,28 +138,41 @@ def recognize_speech():
         audio = recognizer.listen(source)
 
     try:
+
         text = recognizer.recognize_google(audio)
+
         return text
 
     except:
         return ""
 
-# ---------------- TITLE ----------------
+def speak_text(text):
+
+    engine = pyttsx3.init()
+
+    engine.say(text)
+
+    engine.runAndWait()
+
 st.title("🤖 AI Student Assistant")
 
 st.caption("Your personal AI study buddy")
 
-# ---------------- SESSION STATE ----------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 if "current_chat" not in st.session_state:
     st.session_state.current_chat = None
 
-# ---------------- SIDEBAR ----------------
 with st.sidebar:
 
     st.header("⚙ Settings")
+
+    if st.button("🚪 Logout"):
+
+        st.session_state.logged_in = False
+
+        st.rerun()
 
     api_key = st.text_input(
         "Enter Gemini API Key",
@@ -125,12 +181,21 @@ with st.sidebar:
 
     st.divider()
 
-    # NEW CHAT
+    uploaded_file = st.file_uploader(
+        "📄 Upload PDF",
+        type=["pdf"]
+    )
+
+    st.divider()
+
     if st.button("➕ New Chat"):
 
-        chat_name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        chat_name = datetime.now().strftime(
+            "%Y-%m-%d_%H-%M-%S"
+        )
 
         st.session_state.current_chat = chat_name
+
         st.session_state.messages = []
 
         save_chat(chat_name, [])
@@ -145,12 +210,17 @@ with st.sidebar:
 
     for chat in chat_list:
 
-        col1, col2 = st.columns([4,1])
+        col1, col2 = st.columns([4, 1])
 
         with col1:
-            if st.button(chat, use_container_width=True):
+
+            if st.button(
+                chat,
+                use_container_width=True
+            ):
 
                 st.session_state.current_chat = chat
+
                 st.session_state.messages = load_chat(chat)
 
                 st.rerun()
@@ -159,27 +229,33 @@ with st.sidebar:
 
             if st.button("❌", key=chat):
 
-                os.remove(os.path.join(CHAT_FOLDER, f"{chat}.json"))
+                os.remove(
+                    os.path.join(
+                        CHAT_FOLDER,
+                        f"{chat}.json"
+                    )
+                )
 
-                if st.session_state.current_chat == chat:
+                if (
+                    st.session_state.current_chat
+                    == chat
+                ):
+
                     st.session_state.current_chat = None
+
                     st.session_state.messages = []
 
                 st.rerun()
 
-# ---------------- CHECK API KEY ----------------
 if api_key:
 
-    # Gemini client
     client = genai.Client(api_key=api_key)
 
-    # ---------------- SHOW OLD MESSAGES ----------------
     for message in st.session_state.messages:
 
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # ---------------- VOICE BUTTON ----------------
     if st.button("🎤 Speak"):
 
         voice_text = recognize_speech()
@@ -187,30 +263,33 @@ if api_key:
         if voice_text:
             st.session_state.voice_prompt = voice_text
 
-    # ---------------- CHAT INPUT ----------------
     prompt = st.chat_input("Ask anything...")
 
-    # Voice prompt
     if "voice_prompt" in st.session_state:
 
         prompt = st.session_state.voice_prompt
+
         del st.session_state.voice_prompt
 
-    # ---------------- USER MESSAGE ----------------
     if prompt:
 
-        # Auto-create chat if none exists
         if st.session_state.current_chat is None:
 
-            short_name = prompt[:30].replace(" ", "_")
+            short_name = (
+                prompt[:30]
+                .replace(" ", "_")
+            )
 
-            timestamp = datetime.now().strftime("%H-%M-%S")
+            timestamp = datetime.now().strftime(
+                "%H-%M-%S"
+            )
 
-            chat_name = f"{short_name}_{timestamp}"
+            chat_name = (
+                f"{short_name}_{timestamp}"
+            )
 
             st.session_state.current_chat = chat_name
 
-        # Save user message
         st.session_state.messages.append(
             {
                 "role": "user",
@@ -218,11 +297,22 @@ if api_key:
             }
         )
 
-        # Show user message
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # ---------------- BUILD CONVERSATION ----------------
+        pdf_text = ""
+
+        if uploaded_file:
+
+            pdf_reader = PdfReader(uploaded_file)
+
+            for page in pdf_reader.pages:
+
+                text = page.extract_text()
+
+                if text:
+                    pdf_text += text
+
         conversation_history = ""
 
         system_prompt = """
@@ -231,30 +321,76 @@ if api_key:
         Use markdown formatting whenever useful.
         """
 
-        conversation_history += system_prompt + "\n\n"
+        conversation_history += (
+            system_prompt + "\n\n"
+        )
+
+        if pdf_text:
+
+            conversation_history += (
+                "Here is PDF content:\n"
+                + pdf_text +
+                "\n\n"
+            )
 
         for msg in st.session_state.messages:
 
             role = msg["role"]
+
             content = msg["content"]
 
-            conversation_history += f"{role}: {content}\n"
+            conversation_history += (
+                f"{role}: {content}\n"
+            )
 
-        # ---------------- AI RESPONSE ----------------
         with st.chat_message("assistant"):
 
             with st.spinner("Thinking..."):
 
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=conversation_history
-                )
+                try:
 
-                reply = response.text
+                    response = (
+                        client.models.generate_content(
+                            model="gemini-2.0-flash",
+                            contents=conversation_history
+                        )
+                    )
 
-                st.markdown(reply)
+                    reply = response.text
 
-        # Save AI response
+                    message_placeholder = st.empty()
+
+                    full_response = ""
+
+                    for word in reply.split():
+
+                        full_response += (
+                            word + " "
+                        )
+
+                        time.sleep(0.03)
+
+                        message_placeholder.markdown(
+                            full_response + "▌"
+                        )
+
+                    message_placeholder.markdown(
+                        full_response
+                    )
+
+                    speak_text(reply)
+
+                except Exception as e:
+
+                    reply = (
+                        "⚠ Gemini server is busy right now. "
+                        "Please try again later."
+                    )
+
+                    st.error(reply)
+
+                    print(e)
+
         st.session_state.messages.append(
             {
                 "role": "assistant",
@@ -262,12 +398,13 @@ if api_key:
             }
         )
 
-        # SAVE CHAT
         save_chat(
             st.session_state.current_chat,
             st.session_state.messages
         )
 
-# ---------------- NO API KEY ----------------
 else:
-    st.info("Enter your Gemini API key in the sidebar.")
+
+    st.info(
+        "Enter your Gemini API key in the sidebar."
+    )
