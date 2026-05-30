@@ -1,126 +1,81 @@
-# 🤖 TolearnChatbot
+# 🤖 ToLearnChatbot
 
-An AI-powered Student Assistant built using Streamlit and Google Gemini AI.
-
-TolearnChatbot helps students learn faster by providing intelligent answers, voice interaction, document analysis, image understanding, and chat history management in a clean and modern interface.
+An AI-powered Student Assistant built with Streamlit and Google Gemini AI. This chatbot helps students learn, ask questions, analyze PDFs and images, use voice input, save chat history, and interact with AI through a modern web interface.
 
 ---
 
-## ✨ Features
-
-### 🔐 Secure Login System
-
-* Username and password authentication
-* Credentials stored securely in `.env`
-* Session-based login management
+## 🚀 Features
 
 ### 💬 AI Chat Assistant
 
 * Powered by Google Gemini AI
-* Natural language conversations
-* Fast and intelligent responses
-* Context-aware chat history
+* Answers academic and general questions
+* Maintains conversation history
+
+### 🔐 Secure Login System
+
+* Username and password authentication
+* Credentials stored securely using environment variables
 
 ### 🎤 Voice Input
 
-* Speak directly to the chatbot
 * Speech-to-text using SpeechRecognition
-* Hands-free interaction
+* Speak your question instead of typing
 
-### 🔊 Voice Output
+### 🔊 Text-to-Speech
 
-* AI responses are spoken aloud
-* Text-to-speech using pyttsx3
+* AI responses can be read aloud
+* Powered by pyttsx3
 
-### 📂 File Upload & Analysis
+### 📄 PDF Analysis
 
-Supports:
+* Upload PDF files
+* Extract and analyze text content
+* Ask questions about uploaded documents
 
-* PDF Documents
-* JPG Images
-* JPEG Images
-* PNG Images
+### 🖼️ Image Analysis
 
-The chatbot can:
+* Upload images (JPG, JPEG, PNG)
+* Gemini Vision analyzes image content
+* Detects objects, text, diagrams, and charts
 
-* Read PDF content
-* Summarize documents
-* Answer questions from uploaded files
-* Analyze images and describe their contents
+### 💾 Chat History
 
-### 🖼️ Image Understanding
-
-Upload images and ask questions about them.
-
-The AI can:
-
-* Detect objects
-* Read visible text
-* Explain diagrams
-* Analyze charts and visuals
-
-### 💾 Chat History Management
-
-* Save conversations automatically
-* Create multiple chats
-* Load previous chats
-* Delete old chats
+* Automatically saves conversations
+* Load previous chats anytime
+* Delete unwanted chat sessions
 
 ### 🎨 Modern UI
 
 * Dark-themed interface
-* Responsive Streamlit layout
-* Clean chatbot experience
+* Responsive design
+* Streamlit-powered web application
 
 ---
 
-## 🛠️ Tech Stack
-
-### Frontend
-
-* Streamlit
-
-### AI Model
-
-* Google Gemini 2.0 Flash
-
-### Backend Utilities
+## 🛠️ Technologies Used
 
 * Python
-
-### Libraries Used
-
-* google-genai
-* python-dotenv
+* Streamlit
+* Google Gemini API
+* Pillow (PIL)
 * SpeechRecognition
-* pyttsx3
+* Pyttsx3
 * PyPDF2
-* python-docx
-* pandas
-* openpyxl
-* pillow
-* pyaudio
+* Python-dotenv
 
 ---
 
-## 📁 Project Structure
+## 📂 Project Structure
 
-```bash
-TolearnChatbot/
+```text
+ToLearnChatbot/
 │
 ├── app.py
-├── auth.py
-├── chat_manager.py
-├── speech_utils.py
-├── file_processor.py
-│
+├── .env
+├── requirements.txt
 ├── uploads/
 ├── saved_chats/
-│
-├── .env
-├── .gitignore
-├── requirements.txt
-│
 └── README.md
 ```
 
@@ -131,7 +86,7 @@ TolearnChatbot/
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/your-username/tolearnchatbot.git
+git clone https://github.com/yourusername/tolearnchatbot.git
 cd tolearnchatbot
 ```
 
@@ -161,77 +116,82 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
----
-
-## 🔑 Environment Variables
-
-Create a `.env` file:
+### 4. Create .env File
 
 ```env
-USERNAME=your_username
-PASSWORD=your_password
+GEMINI_API_KEY=your_gemini_api_key
+APP_USERNAME=admin
+APP_PASSWORD=password123
 ```
 
-Do NOT upload your `.env` file to GitHub.
-
----
-
-## 🚀 Running the Application
+### 5. Run Application
 
 ```bash
 streamlit run app.py
 ```
 
-Application will open in your browser.
+---
+
+## 🔑 Getting Gemini API Key
+
+1. Visit Google AI Studio
+2. Create a new API key
+3. Copy the key
+4. Add it to the `.env` file
 
 ---
 
-## 📚 How To Use
+## 📸 Supported Upload Formats
 
-1. Login using your credentials.
-2. Enter your Gemini API Key.
-3. Start chatting with the AI.
-4. Upload PDFs or Images for analysis.
-5. Use voice input by clicking the microphone button.
-6. Listen to AI responses using built-in text-to-speech.
-7. Save and revisit previous conversations.
+### Images
 
----
+* JPG
+* JPEG
+* PNG
 
-## 🔒 Security
+### Documents
 
-The project uses:
-
-* Environment variables for credentials
-* `.gitignore` protection for sensitive files
-* Session-based authentication
-
-Never expose:
-
-* Gemini API Keys
-* `.env` files
-* Personal credentials
+* PDF
 
 ---
 
 ## 🎯 Future Improvements
 
-* User Registration System
-* Multiple User Accounts
-* Database Integration (MongoDB)
-* Chat Search Feature
-* AI Study Notes Generator
-* Quiz Generator
-* Flashcard Creator
-* OCR for Image Text Extraction
-* Cloud Deployment
-* Dark/Light Theme Toggle
-* Export Chats as PDF
+* User registration system
+* Multiple user accounts
+* Database integration (MongoDB)
+* Chat export to PDF
+* AI-generated study notes
+* Quiz generation
+* Flashcard generation
+* Student dashboard
+* Cloud deployment
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome.
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to GitHub
+5. Open a Pull Request
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License.
 
 ---
 
 ## 👨‍💻 Author
 
-Developed by Dyuti Asok B
+Dyuti Asok B
 
-A personal AI-powered learning assistant designed to make studying smarter, faster, and more interactive.
+Aspiring Full Stack Developer | AI Enthusiast | Student Developer
+
+If you like this project, don't forget to ⭐ the repository.
+
