@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from PIL import Image
 import os
 import streamlit as st
 from google import genai
@@ -182,9 +183,23 @@ with st.sidebar:
     st.divider()
 
     uploaded_file = st.file_uploader(
-        "📄 Upload PDF",
-        type=["pdf"]
-    )
+    "📂 Upload File",
+    type=["pdf", "jpg", "jpeg", "png"]
+)
+
+if uploaded_file:
+
+    file_type = uploaded_file.type
+
+    if file_type.startswith("image"):
+
+        image = Image.open(uploaded_file)
+
+        st.image(
+            image,
+            caption="Uploaded Image",
+            use_container_width=True
+        )
 
     st.divider()
 
@@ -301,17 +316,31 @@ if api_key:
             st.markdown(prompt)
 
         pdf_text = ""
+image_prompt = ""
 
-        if uploaded_file:
+if uploaded_file:
 
-            pdf_reader = PdfReader(uploaded_file)
+    file_type = uploaded_file.type
 
-            for page in pdf_reader.pages:
+    if file_type == "application/pdf":
 
-                text = page.extract_text()
+        pdf_reader = PdfReader(uploaded_file)
 
-                if text:
-                    pdf_text += text
+        for page in pdf_reader.pages:
+
+            text = page.extract_text()
+
+            if text:
+                pdf_text += text
+
+    elif file_type.startswith("image"):
+
+        image_prompt = """
+        User has uploaded an image.
+        Analyze the image carefully.
+        Describe objects, text, diagrams,
+        charts or anything visible.
+        """
 
         conversation_history = ""
 
@@ -327,11 +356,18 @@ if api_key:
 
         if pdf_text:
 
-            conversation_history += (
-                "Here is PDF content:\n"
-                + pdf_text +
-                "\n\n"
-            )
+    conversation_history += (
+        "Here is PDF content:\n"
+        + pdf_text +
+        "\n\n"
+    )
+
+if image_prompt:
+
+    conversation_history += (
+        image_prompt +
+        "\n\n"
+    )
 
         for msg in st.session_state.messages:
 
@@ -349,13 +385,24 @@ if api_key:
 
                 try:
 
-                    response = (
-                        client.models.generate_content(
-                            model="gemini-2.0-flash",
-                            contents=conversation_history
-                        )
-                    )
+                    if uploaded_file and uploaded_file.type.startswith("image"):
 
+    image = Image.open(uploaded_file)
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=[
+            prompt,
+            image
+        ]
+    )
+
+else:
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=conversation_history
+    )
                     reply = response.text
 
                     message_placeholder = st.empty()

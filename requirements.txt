@@ -1,2 +1,11 @@
 streamlit
 google-genai
+python-dotenv
+SpeechRecognition
+pyttsx3
+PyPDF2
+python-docx
+pandas
+openpyxl
+pillow
+pyaudio
