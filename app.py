@@ -13,7 +13,7 @@ from PyPDF2 import PdfReader
 load_dotenv()
 
 st.set_page_config(
-    page_title="AI Student Assistant",
+    page_title="tolearnchatbot",
     page_icon="🤖",
     layout="wide"
 )
@@ -155,7 +155,7 @@ def speak_text(text):
 
     engine.runAndWait()
 
-st.title("🤖 AI Student Assistant")
+st.title("🤖 Tolearnchatbot")
 
 st.caption("Your personal AI study buddy")
 
