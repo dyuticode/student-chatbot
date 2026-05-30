@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from PIL import Image
 import os
+import re
 import streamlit as st
 from google import genai
 import speech_recognition as sr
@@ -51,8 +52,10 @@ h1, h2, h3, p {
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-USERNAME = os.getenv("USERNAME")
-PASSWORD = os.getenv("PASSWORD")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+USERNAME = os.getenv("APP_USERNAME")
+PASSWORD = os.getenv("APP_PASSWORD")
 
 if not st.session_state.logged_in:
 
@@ -175,31 +178,28 @@ with st.sidebar:
 
         st.rerun()
 
-    api_key = st.text_input(
-        "Enter Gemini API Key",
-        type="password"
-    )
+    api_key = GEMINI_API_KEY
 
     st.divider()
 
     uploaded_file = st.file_uploader(
-    "📂 Upload File",
-    type=["pdf", "jpg", "jpeg", "png"]
-)
+        "📂 Upload File",
+        type=["pdf", "jpg", "jpeg", "png"]
+    )
 
-if uploaded_file:
+    if uploaded_file:
 
-    file_type = uploaded_file.type
+        file_type = uploaded_file.type
 
-    if file_type.startswith("image"):
+        if file_type.startswith("image"):
 
-        image = Image.open(uploaded_file)
+            image = Image.open(uploaded_file)
 
-        st.image(
-            image,
-            caption="Uploaded Image",
-            use_container_width=True
-        )
+            st.image(
+                image,
+                caption="Uploaded Image",
+                use_container_width=True
+            )
 
     st.divider()
 
@@ -231,6 +231,7 @@ if uploaded_file:
 
             if st.button(
                 chat,
+                key=f"load_{chat}",
                 use_container_width=True
             ):
 
@@ -242,7 +243,7 @@ if uploaded_file:
 
         with col2:
 
-            if st.button("❌", key=chat):
+            if st.button("❌", key=f"del_{chat}"):
 
                 os.remove(
                     os.path.join(
@@ -264,7 +265,11 @@ if uploaded_file:
 
 if api_key:
 
-    client = genai.Client(api_key=api_key)
+    try:
+       client = genai.Client(api_key=api_key)
+    except Exception as e:
+       st.error(f"Failed to initialize Gemini: {e}")
+       st.stop()
 
     for message in st.session_state.messages:
 
@@ -290,9 +295,10 @@ if api_key:
 
         if st.session_state.current_chat is None:
 
-            short_name = (
-                prompt[:30]
-                .replace(" ", "_")
+            short_name = re.sub(
+            r'[^a-zA-Z0-9_]',
+            '',
+            prompt[:30].replace(" ", "_")
             )
 
             timestamp = datetime.now().strftime(
@@ -316,31 +322,31 @@ if api_key:
             st.markdown(prompt)
 
         pdf_text = ""
-image_prompt = ""
+        image_prompt = ""
 
-if uploaded_file:
+        if uploaded_file:
 
-    file_type = uploaded_file.type
+            file_type = uploaded_file.type
 
-    if file_type == "application/pdf":
+            if file_type == "application/pdf":
 
-        pdf_reader = PdfReader(uploaded_file)
+                pdf_reader = PdfReader(uploaded_file)
 
-        for page in pdf_reader.pages:
+                for page in pdf_reader.pages:
 
-            text = page.extract_text()
+                    text = page.extract_text()
 
-            if text:
-                pdf_text += text
+                    if text:
+                        pdf_text += text
 
-    elif file_type.startswith("image"):
+            elif file_type.startswith("image"):
 
-        image_prompt = """
-        User has uploaded an image.
-        Analyze the image carefully.
-        Describe objects, text, diagrams,
-        charts or anything visible.
-        """
+                image_prompt = """
+                User has uploaded an image.
+                Analyze the image carefully.
+                Describe objects, text, diagrams,
+                charts or anything visible.
+                """
 
         conversation_history = ""
 
@@ -356,18 +362,18 @@ if uploaded_file:
 
         if pdf_text:
 
-    conversation_history += (
-        "Here is PDF content:\n"
-        + pdf_text +
-        "\n\n"
-    )
+            conversation_history += (
+                "Here is PDF content:\n"
+                + pdf_text +
+                "\n\n"
+            )
 
-if image_prompt:
+        if image_prompt:
 
-    conversation_history += (
-        image_prompt +
-        "\n\n"
-    )
+            conversation_history += (
+                image_prompt +
+                "\n\n"
+            )
 
         for msg in st.session_state.messages:
 
@@ -387,22 +393,23 @@ if image_prompt:
 
                     if uploaded_file and uploaded_file.type.startswith("image"):
 
-    image = Image.open(uploaded_file)
+                        image = Image.open(uploaded_file)
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=[
-            prompt,
-            image
-        ]
-    )
+                        response = client.models.generate_content(
+                            model="gemini-2.0-flash",
+                            contents=[
+                                prompt,
+                                image
+                            ]
+                        )
 
-else:
+                    else:
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=conversation_history
-    )
+                        response = client.models.generate_content(
+                            model="gemini-2.0-flash",
+                            contents=conversation_history
+                        )
+                        
                     reply = response.text
 
                     message_placeholder = st.empty()
@@ -429,14 +436,11 @@ else:
 
                 except Exception as e:
 
-                    reply = (
-                        "⚠ Gemini server is busy right now. "
-                        "Please try again later."
-                    )
+                    reply = f"⚠ Error: {str(e)}"
 
                     st.error(reply)
 
-                    print(e)
+                    print("Gemini Error:", e)
 
         st.session_state.messages.append(
             {
